@@ -72,25 +72,9 @@
     <p>This is your personal link. Please do not share it.</p>
     <p><b>First, put Friends Check-In on your home screen.</b> It takes about a minute, and you only do it once.</p>
 
-    <div class="card" id="iphone">
-      <h2>On an iPhone</h2>
-      <ol>
-        <li>Make sure this page is open in Safari.</li>
-        <li>Tap the Share button, a square with an arrow pointing up. If you do not see it, tap the three dots first.</li>
-        <li>Scroll down and tap "Add to Home Screen." You may need to tap "More" first.</li>
-        <li>Tap "Add."</li>
-      </ol>
-    </div>
-
-    <div class="card" id="android">
-      <h2>On an Android phone</h2>
-      <ol>
-        <li>Make sure this page is open in Chrome.</li>
-        <li>Tap the three dots at the top right.</li>
-        <li>Tap "Add to Home screen." If it asks, choose "Create shortcut."</li>
-        <li>Tap "Add." If it asks again, tap "Add to home screen."</li>
-      </ol>
-      <p class="muted">The icon may land on a later page of your home screen. Swipe left to find it, then press and hold it to move it.</p>
+    <div class="card">
+      <ol id="howto"></ol>
+      <p class="muted" id="howto-note"></p>
     </div>
 
     <p>From then on, tap the yellow icon to check in.</p>
@@ -103,11 +87,42 @@
   } else {
     document.getElementById('steps').style.display = 'block';
     document.getElementById('open').href = target;
-    // Show the steps for this phone first.
-    if (/android/i.test(navigator.userAgent)) {
-      var a = document.getElementById('android');
-      a.parentNode.insertBefore(a, document.getElementById('iphone'));
+    // Show only the steps for the phone and browser this page is open in.
+    var ua = navigator.userAgent;
+    var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var isAndroid = /Android/.test(ua);
+    var steps, note = '';
+    if (isIOS && /CriOS/.test(ua)) {
+      steps = ['Tap the Share button at the top right, next to the web address. It is a square with an arrow pointing up.',
+               'Scroll down and tap "Add to Home Screen."',
+               'Tap "Add."'];
+    } else if (isIOS && /Safari/.test(ua) && !/(FxiOS|EdgiOS|OPiOS|GSA)/.test(ua)) {
+      steps = ['Tap the Share button, a square with an arrow pointing up. If you do not see it, tap the three dots first.',
+               'Scroll down and tap "Add to Home Screen." You may need to tap "More" first.',
+               'Tap "Add."'];
+    } else if (isIOS) {
+      steps = ['Tap the Share button, a square with an arrow pointing up. If you do not see it, open the menu first (three dots or three lines).',
+               'Scroll down and tap "Add to Home Screen."',
+               'Tap "Add."'];
+    } else if (isAndroid && /SamsungBrowser/.test(ua)) {
+      steps = ['Tap the menu button, three lines at the bottom right.',
+               'Tap "Add page to," then "Home screen."',
+               'Tap "Add."'];
+    } else if (isAndroid) {
+      steps = ['Tap the three dots at the top right.',
+               'Tap "Add to Home screen." If it asks, choose "Create shortcut."',
+               'Tap "Add." If it asks again, tap "Add to home screen."'];
+      note = 'The icon may land on a later page of your home screen. Swipe left to find it, then press and hold it to move it.';
+    } else {
+      steps = ['Open this same link on your phone. The steps for your phone will show there.'];
     }
+    var list = document.getElementById('howto');
+    steps.forEach(function (t) {
+      var li = document.createElement('li');
+      li.textContent = t;
+      list.appendChild(li);
+    });
+    document.getElementById('howto-note').textContent = note;
     // After this first visit, this phone goes straight to the app.
     remember();
     // Take "setup=1" out of the address so the home-screen icon does not save it.
