@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<title>Friends Check-In</title>
+<meta name="apple-mobile-web-app-title" content="Friends">
+<meta name="theme-color" content="#FFC93C">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="manifest" href="manifest.json">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #fbf8f3; color: #1d1d1b;
+    font-family: -apple-system, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 21px; line-height: 1.5; }
+  .wrap { max-width: 600px; margin: 0 auto; padding: 20px 18px 40px; }
+  .top { text-align: center; }
+  .top img { width: 120px; height: 120px; border-radius: 27px; }
+  h1 { font-size: 30px; margin: 12px 0 6px; }
+  h2 { font-size: 25px; margin: 0 0 10px; }
+  .card { background: #fff; border: 2px solid #d9d2c5; border-radius: 14px; padding: 18px; margin: 18px 0; }
+  ol { padding-left: 28px; margin: 0; }
+  li { margin: 10px 0; }
+  a.big { display: block; text-align: center; text-decoration: none; min-height: 62px; font-size: 22px;
+    font-weight: 700; border: 2px solid #1d4e89; border-radius: 14px; background: #1d4e89; color: #fff;
+    padding: 16px 12px; margin: 20px 0; }
+  .muted { color: #4a4a4a; }
+  .alert { border-color: #b3261e; background: #fdecea; }
+  #steps, #bad { display: none; }
+</style>
+<script>
+  // The Google app this page opens. The friend's personal key comes from her link (?k=...).
+  var APP = 'https://script.google.com/macros/s/AKfycbxEfbwQz5RNgM1hVf5pcnAD82vmx7AzPWyuP4IvLOCdmLtqwEdhy2nj78FHnjaNWpfS/exec';
+
+  var params = new URLSearchParams(location.search);
+  var key = params.get('k') || '';
+  var good = /^[a-f0-9]{32}$/.test(key);
+  var target = good ? APP + '?k=' + key : '';
+
+  function remembered() {
+    try { return localStorage.getItem('fci_seen') === 'yes'; } catch (e) { return false; }
+  }
+  function remember() {
+    try { localStorage.setItem('fci_seen', 'yes'); } catch (e) {}
+  }
+  var fromHomeScreen = window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  var wantsSteps = params.get('setup') === '1';
+
+  // Opened from the home-screen icon, or seen before on this phone: go straight to the app.
+  if (good && !wantsSteps && (fromHomeScreen || remembered())) {
+    location.replace(target);
+  }
+</script>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <img src="apple-touch-icon.png" alt="">
+    <h1>Friends Check-In</h1>
+  </div>
+
+  <div id="bad" class="card alert">
+    <p>This link is not complete. Ask the organizer for your personal link.</p>
+  </div>
+
+  <div id="steps">
+    <p>This is your personal link. Please do not share it.</p>
+    <p><b>First, put Friends Check-In on your home screen.</b> It takes about a minute, and you only do it once.</p>
+
+    <div class="card" id="iphone">
+      <h2>On an iPhone</h2>
+      <ol>
+        <li>Make sure this page is open in Safari.</li>
+        <li>Tap the Share button, a square with an arrow pointing up. If you do not see it, tap the three dots first.</li>
+        <li>Scroll down and tap "Add to Home Screen." You may need to tap "More" first.</li>
+        <li>Tap "Add."</li>
+      </ol>
+    </div>
+
+    <div class="card" id="android">
+      <h2>On an Android phone</h2>
+      <ol>
+        <li>Make sure this page is open in Chrome.</li>
+        <li>Tap the three dots at the top right.</li>
+        <li>Tap "Add to Home screen." If it asks, choose "Create shortcut."</li>
+        <li>Tap "Add." If it asks again, tap "Add to home screen."</li>
+      </ol>
+      <p class="muted">The icon may land on a later page of your home screen. Swipe left to find it, then press and hold it to move it.</p>
+    </div>
+
+    <p>From then on, tap the yellow icon to check in.</p>
+    <a class="big" id="open" href="#">Open my check-in now</a>
+  </div>
+</div>
+<script>
+  if (!good) {
+    document.getElementById('bad').style.display = 'block';
+  } else {
+    document.getElementById('steps').style.display = 'block';
+    document.getElementById('open').href = target;
+    // Show the steps for this phone first.
+    if (/android/i.test(navigator.userAgent)) {
+      var a = document.getElementById('android');
+      a.parentNode.insertBefore(a, document.getElementById('iphone'));
+    }
+    // After this first visit, this phone goes straight to the app.
+    remember();
+    // Take "setup=1" out of the address so the home-screen icon does not save it.
+    if (wantsSteps && window.history && history.replaceState) {
+      history.replaceState(null, '', location.pathname + '?k=' + key);
+    }
+  }
+</script>
+</body>
+</html>

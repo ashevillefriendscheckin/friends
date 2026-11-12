@@ -1,0 +1,12 @@
+{
+  "name": "Friends Check-In",
+  "short_name": "Friends",
+  "display": "browser",
+  "background_color": "#FFC93C",
+  "theme_color": "#FFC93C",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
