@@ -21,16 +21,19 @@
   .top { text-align: center; }
   .top img { width: 120px; height: 120px; border-radius: 27px; }
   h1 { font-size: 30px; margin: 12px 0 6px; }
-  h2 { font-size: 25px; margin: 0 0 10px; }
   .card { background: #fff; border: 2px solid #d9d2c5; border-radius: 14px; padding: 18px; margin: 18px 0; }
   ol { padding-left: 28px; margin: 0; }
-  li { margin: 10px 0; }
+  li { margin: 14px 0; }
+  ul.where { padding-left: 22px; margin: 8px 0 0; }
+  ul.where li { margin: 8px 0; }
+  .icon { display: inline-block; vertical-align: middle; width: 40px; height: 40px; margin: 0 4px; }
   a.big { display: block; text-align: center; text-decoration: none; min-height: 62px; font-size: 22px;
     font-weight: 700; border: 2px solid #1d4e89; border-radius: 14px; background: #1d4e89; color: #fff;
-    padding: 16px 12px; margin: 20px 0; }
+    padding: 16px 12px; margin: 20px 0 12px; }
+  a.plain { display: block; text-align: center; font-size: 19px; color: #1d4e89; padding: 12px; }
   .muted { color: #4a4a4a; }
   .alert { border-color: #b3261e; background: #fdecea; }
-  #steps, #bad { display: none; }
+  #steps, #bad, #done { display: none; }
 </style>
 <script>
   // The Google app this page opens. The friend's personal key comes from her link (?k=...).
@@ -40,18 +43,19 @@
   var key = params.get('k') || '';
   var good = /^[a-f0-9]{32}$/.test(key);
   var target = good ? APP + '?k=' + key : '';
+  var SEEN = 'fci_added_' + key;   // remembered per person, so a shared phone still shows the steps
 
   function remembered() {
-    try { return localStorage.getItem('fci_seen') === 'yes'; } catch (e) { return false; }
+    try { return localStorage.getItem(SEEN) === 'yes'; } catch (e) { return false; }
   }
   function remember() {
-    try { localStorage.setItem('fci_seen', 'yes'); } catch (e) {}
+    try { localStorage.setItem(SEEN, 'yes'); } catch (e) {}
   }
   var fromHomeScreen = window.navigator.standalone === true ||
     (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
   var wantsSteps = params.get('setup') === '1';
 
-  // Opened from the home-screen icon, or seen before on this phone: go straight to the app.
+  // Opened from the home-screen icon, or she has said she added the icon: go straight to the app.
   if (good && !wantsSteps && (fromHomeScreen || remembered())) {
     location.replace(target);
   }
@@ -78,40 +82,59 @@
     </div>
 
     <p>From then on, tap the yellow icon to check in.</p>
-    <a class="big" id="open" href="#">Open my check-in now</a>
+    <a class="big" id="added" href="#">I added the icon</a>
+    <a class="plain" id="skip" href="#">Open my check-in without adding the icon</a>
+  </div>
+
+  <div id="done">
+    <div class="card">
+      <p><b>Now go to your home screen and tap the yellow Friends icon.</b></p>
+      <p>That is how you will check in from now on. You can close this page.</p>
+    </div>
+    <a class="plain" id="here" href="#">Can't find the icon? Open my check-in here.</a>
   </div>
 </div>
 <script>
+  // Small pictures of the buttons named in the steps.
+  var LINES = '<svg class="icon" viewBox="0 0 40 40" aria-label="three lines button"><circle cx="20" cy="20" r="18" fill="#fff" stroke="#1d1d1b" stroke-width="2"/><path d="M11 14h18M11 20h15M11 26h11" stroke="#1d1d1b" stroke-width="3" stroke-linecap="round"/></svg>';
+  var SHARE = '<svg class="icon" viewBox="0 0 40 40" aria-label="Share button"><path d="M13 16h-3v19h20V16h-3" fill="none" stroke="#1d4e89" stroke-width="2.5" stroke-linejoin="round"/><path d="M20 26V5M13 12l7-7 7 7" fill="none" stroke="#1d4e89" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
   if (!good) {
     document.getElementById('bad').style.display = 'block';
   } else {
     document.getElementById('steps').style.display = 'block';
-    document.getElementById('open').href = target;
+    document.getElementById('skip').href = target;
+    document.getElementById('here').href = target;
+    document.getElementById('added').addEventListener('click', function (ev) {
+      ev.preventDefault();
+      remember();
+      document.getElementById('steps').style.display = 'none';
+      document.getElementById('done').style.display = 'block';
+      window.scrollTo(0, 0);
+    });
     // Show only the steps for the phone and browser this page is open in.
     var ua = navigator.userAgent;
     var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     var isAndroid = /Android/.test(ua);
     var steps, note = '';
-    if (isIOS && /CriOS/.test(ua)) {
-      steps = ['Tap the Share button at the top right, next to the web address. It is a square with an arrow pointing up.',
-               'Scroll down and tap "Add to Home Screen."',
-               'Tap "Add."'];
-    } else if (isIOS && /Safari/.test(ua) && !/(FxiOS|EdgiOS|OPiOS|GSA)/.test(ua)) {
-      steps = ['Tap the Share button, a square with an arrow pointing up. If you do not see it, tap the three dots first.',
-               'Scroll down and tap "Add to Home Screen." You may need to tap "More" first.',
-               'Tap "Add."'];
-    } else if (isIOS) {
-      steps = ['Tap the Share button, a square with an arrow pointing up. If you do not see it, open the menu first (three dots or three lines).',
-               'Scroll down and tap "Add to Home Screen."',
-               'Tap "Add."'];
+    if (isIOS) {
+      // One set of steps for every iPhone browser: it names the Share picture, not where the button sits,
+      // because each browser puts it in a different place and moves it from one version to the next.
+      steps = ['Find the Share button ' + SHARE + ', a square with an arrow pointing up.' +
+                 '<ul class="where"><li>In Safari, it is usually at the bottom.</li>' +
+                 '<li>In Chrome, it is usually at the top, next to the web address.</li>' +
+                 '<li>Don\'t see it? Tap the menu button (three lines ' + LINES + ' or three dots). Share is in that menu.</li></ul>',
+               'Tap <b>Share</b>. Scroll down the list and tap <b>Add to Home Screen</b>.',
+               'Tap <b>Add</b>.'];
+      note = 'No buttons showing at all? Tap the very bottom edge of the screen to bring them back.';
     } else if (isAndroid && /SamsungBrowser/.test(ua)) {
       steps = ['Tap the menu button, three lines at the bottom right.',
-               'Tap "Add page to," then "Home screen."',
-               'Tap "Add."'];
+               'Tap <b>Add page to</b>, then <b>Home screen</b>.',
+               'Tap <b>Add</b>.'];
     } else if (isAndroid) {
       steps = ['Tap the three dots at the top right.',
-               'Tap "Add to Home screen." If it asks, choose "Create shortcut."',
-               'Tap "Add." If it asks again, tap "Add to home screen."'];
+               'Tap <b>Add to Home screen</b>. If it asks, choose <b>Create shortcut</b>.',
+               'Tap <b>Add</b>. If it asks again, tap <b>Add to home screen</b>.'];
       note = 'The icon may land on a later page of your home screen. Swipe left to find it, then press and hold it to move it.';
     } else {
       steps = ['Open this same link on your phone. The steps for your phone will show there.'];
@@ -119,12 +142,10 @@
     var list = document.getElementById('howto');
     steps.forEach(function (t) {
       var li = document.createElement('li');
-      li.textContent = t;
+      li.innerHTML = t;   // the steps above are fixed text written here, not anything typed by a visitor
       list.appendChild(li);
     });
-    document.getElementById('howto-note').textContent = note;
-    // After this first visit, this phone goes straight to the app.
-    remember();
+    document.getElementById('howto-note').innerHTML = note;
     // Take "setup=1" out of the address so the home-screen icon does not save it.
     if (wantsSteps && window.history && history.replaceState) {
       history.replaceState(null, '', location.pathname + '?k=' + key);
